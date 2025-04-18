@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fantasy Name Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #1a1a1a;
+      color: #f0f0f0;
+      text-align: center;
+      padding: 2em;
+    }
+    .slot {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1em;
+      flex-wrap: wrap;
+    }
+    .word {
+      border: 2px solid #444;
+      border-radius: 8px;
+      padding: 0.5em 1em;
+      margin: 0.5em;
+      cursor: pointer;
+      background-color: #2a2a2a;
+    }
+    .locked {
+      background-color: #444;
+      color: #aaa;
+    }
+    button {
+      padding: 0.5em 1.5em;
+      margin-top: 1em;
+      font-size: 1.1em;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .name-display {
+      margin-top: 1.5em;
+      font-size: 1.4em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Fantasy Name Generator</h1>
+
+  <div class="slot" id="slots"></div>
+
+  <button onclick="rollWords()">🎲 Roll All</button>
+
+  <div class="name-display" id="fullNameDisplay"></div>
+
+  <script>
+    const syllables = [
+      "dra", "vel", "zor", "morn", "kai", "lyr", "grim", "thal", "sha", "nur",
+      "vak", "glen", "mir", "ael", "vor", "nis", "ser", "zel", "rin", "ark"
+    ];
+
+    const classes = [
+      "Knight", "Warlock", "Assassin", "Necromancer", "Witch", "Scholar",
+      "Thief", "Bard", "Priestess", "Waitress", "Hunter", "Druid", "Warden"
+    ];
+
+    const locked = [false, false, false, false, false, false, false];
+    const words = ["", "", "", "", "", "", ""];
+
+    const slotsContainer = document.getElementById("slots");
+
+    function randomFrom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function createSlots() {
+      for (let i = 0; i < 7; i++) {
+        const div = document.createElement("div");
+        div.className = "word";
+        div.textContent = "[ ? ]";
+        div.onclick = () => toggleLock(i);
+        div.id = "word-" + i;
+        slotsContainer.appendChild(div);
+      }
+    }
+
+    function toggleLock(index) {
+      locked[index] = !locked[index];
+      const el = document.getElementById("word-" + index);
+      el.classList.toggle("locked", locked[index]);
+    }
+
+    function rollWords() {
+      for (let i = 0; i < 6; i++) {
+        if (!locked[i]) {
+          words[i] = randomFrom(syllables);
+        }
+        document.getElementById("word-" + i).textContent = words[i];
+      }
+      if (!locked[6]) {
+        words[6] = randomFrom(classes);
+        document.getElementById("word-" + 6).textContent = words[6];
+      }
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      const front = words.slice(0, 3).join("");
+      const end = words.slice(3, 6).join("");
+      const job = words[6];
+      document.getElementById("fullNameDisplay").textContent =
+        `🧝 ${front} ${end}, the ${job}`;
+    }
+
+    // Initialize
+    createSlots();
+    rollWords();
+  </script>
+
+</body>
+</html>
