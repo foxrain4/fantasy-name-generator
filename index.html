@@ -19,6 +19,10 @@
       text-shadow: 2px 2px 4px #000;
     }
 
+    .slot-group {
+      margin-bottom: 1.5rem;
+    }
+
     .slot {
       display: inline-block;
       margin: 0.5rem;
@@ -79,10 +83,10 @@
 
   <h1>Fantasy Name Generator</h1>
 
-  <div>
-    <div id="slots"></div>
-    <button onclick="roll()">Roll All</button>
-  </div>
+  <div class="slot-group" id="slots-name"></div>
+  <button onclick="roll()">Roll All</button>
+
+  <div class="slot-group" id="slots-class"></div>
 
   <div class="name-section">
     <div id="fullName"></div>
@@ -141,14 +145,12 @@
     }
 
     function roll() {
-      // Roll syllables
       for (let i = 0; i < 6; i++) {
         if (!lockState[i]) {
           values[i] = mutateWord(pickRandom(syllables));
         }
       }
 
-      // Randomize syllable count per half
       const frontCount = Math.floor(Math.random() * 3) + 1;
       const endCount = 6 - frontCount;
 
@@ -165,28 +167,30 @@
     }
 
     function updateDisplay(frontName = "", endName = "") {
-      const slotDiv = document.getElementById("slots");
-      slotDiv.innerHTML = "";
+      const nameDiv = document.getElementById("slots-name");
+      const classDiv = document.getElementById("slots-class");
+      nameDiv.innerHTML = "";
+      classDiv.innerHTML = "";
 
       for (let i = 0; i < 6; i++) {
         const slot = document.createElement("div");
         slot.className = `slot ${lockState[i] ? "locked" : ""}`;
         slot.innerText = `${i + 1}. ${values[i] || "---"}`;
         slot.onclick = () => toggleLock(i);
-        slotDiv.appendChild(slot);
+        nameDiv.appendChild(slot);
       }
 
       const classSlot = document.createElement("div");
       classSlot.className = `slot ${lockState[6] ? "locked" : ""}`;
       classSlot.innerText = `7. ${values[6] || "---"}`;
       classSlot.onclick = () => toggleLock(6);
-      slotDiv.appendChild(classSlot);
+      classDiv.appendChild(classSlot);
 
       const descSlot = document.createElement("div");
       descSlot.className = `slot ${lockState[7] ? "locked" : ""}`;
       descSlot.innerText = `8. ${values[7] || "---"}`;
       descSlot.onclick = () => toggleLock(7);
-      slotDiv.appendChild(descSlot);
+      classDiv.appendChild(descSlot);
 
       document.getElementById("fullName").innerText =
         frontName && endName ? `Name: ${frontName} ${endName}` : "";
