@@ -2,100 +2,121 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fantasy Name Generator</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 2em; background: #111; color: #eee; }
-    .word { display: inline-block; margin: 0.5em; padding: 0.5em 1em; border: 2px solid #444; border-radius: 10px; cursor: pointer; }
-    .locked { background: #333; color: #aaa; border-color: #888; }
-    button { padding: 0.5em 1em; margin: 1em; font-size: 1.2em; }
-    .name { font-size: 1.8em; margin-top: 1em; font-weight: bold; color: #6ff; }
-    .class { font-size: 1.3em; margin-top: 0.5em; color: #fc9; }
+    body { font-family: 'Georgia', serif; text-align: center; padding: 2rem; background: #111; color: #eee; }
+    .slot { display: inline-block; margin: 1rem; padding: 0.5rem 1rem; background: #222; border-radius: 8px; }
+    .locked { background: #4a0; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 1rem; }
+    .name-section { margin: 2rem 0; font-size: 1.5rem; }
   </style>
 </head>
 <body>
 
   <h1>Fantasy Name Generator</h1>
 
-  <div id="words"></div>
-  <button onclick="rollAll()">🎲 Roll All</button>
+  <div>
+    <div id="slots"></div>
+    <button onclick="roll()">Roll All</button>
+  </div>
 
-  <div class="name" id="generatedName"></div>
-  <div class="class" id="generatedClass"></div>
+  <div class="name-section">
+    <div id="fullName"></div>
+    <div id="classTitle"></div>
+  </div>
 
   <script>
     const syllables = [
       "dra", "vel", "zor", "morn", "kai", "lyr", "grim", "thal", "sha", "nur",
       "vak", "glen", "mir", "ael", "vor", "nis", "ser", "zel", "rin", "ark",
-      "krul", "vash", "teneb", "mor", "xis", "gul", "rath", "thren", "dusk",
-      "nyx", "val", "syl", "nok", "zem", "orn", "ith", "vek", "zar", "kael", "lur",
-      "rav", "brax", "eph", "zan", "quor", "nyra", "sol", "wyn", "fae", "azr",
-      "xen", "jhar", "khor", "drex", "lim", "yul", "om", "yx", "vyr", "tarn"
+      "nyx", "vyr", "zan", "kor", "lux", "syra", "dael", "orim", "rax", "ish",
+      "thex", "ezra", "ulth", "xan", "bram", "tarn", "elv", "keth", "zhul"
     ];
 
     const classes = [
       "Knight", "Warlock", "Assassin", "Necromancer", "Witch", "Scholar",
       "Thief", "Bard", "Priestess", "Waitress", "Hunter", "Druid", "Warden",
-      "Alchemist", "Blood Mage", "Gravekeeper", "Wanderer", "Exorcist",
-      "Oracle", "Tavern Keeper", "Jester", "Ritualist", "Sellsword",
-      "Moon Priest", "Caretaker", "Grifter", "Fleshcrafter", "Ratcatcher",
-      "Librarian", "Seer", "Shadow Dancer", "Beastmaster", "Runesmith",
-      "Mythkeeper", "Echo Binder", "Shard Whisperer", "Starcaller", "Gatewatcher"
+      "Shadowblade", "Firecaller", "Stormseer", "Ranger", "Mystic"
     ];
 
-    let words = [];
-    let locks = [false, false, false, false, false, false];
+    const descriptors = [
+      "of Donar", "of the Flame", "of Shadows", "of the North", "from Elaria",
+      "of the Depths", "of Twilight", "from Virel", "of the Wastes", "of the Sky",
+      "from Kurn", "of Stonehelm", "of the Crimson Vale"
+    ];
 
-    const wordsDiv = document.getElementById("words");
-    const nameDiv = document.getElementById("generatedName");
-    const classDiv = document.getElementById("generatedClass");
-
-    function randomSyllable() {
-      return syllables[Math.floor(Math.random() * syllables.length)];
-    }
-
-    function randomClass() {
-      return classes[Math.floor(Math.random() * classes.length)];
-    }
-
-    function rollAll() {
-      for (let i = 0; i < 6; i++) {
-        if (!locks[i]) {
-          words[i] = randomSyllable();
-        }
-      }
-
-      renderWords();
-
-      const firstLen = Math.floor(Math.random() * 3) + 1; // 1-3
-      const lastLen = Math.floor(Math.random() * 3) + 1;
-
-      const firstName = words.slice(0, firstLen).join("");
-      const lastName = words.slice(3, 3 + lastLen).join("");
-
-      nameDiv.textContent = `${firstName} ${lastName}`;
-      classDiv.textContent = randomClass();
-    }
+    const lockState = Array(8).fill(false);
+    const values = Array(8).fill("");
 
     function toggleLock(index) {
-      locks[index] = !locks[index];
-      renderWords();
+      lockState[index] = !lockState[index];
+      updateDisplay();
     }
 
-    function renderWords() {
-      wordsDiv.innerHTML = "";
+    function pickRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function roll() {
       for (let i = 0; i < 6; i++) {
-        const span = document.createElement("span");
-        span.className = "word" + (locks[i] ? " locked" : "");
-        span.textContent = words[i] || "---";
-        span.onclick = () => toggleLock(i);
-        wordsDiv.appendChild(span);
+        if (!lockState[i]) values[i] = pickRandom(syllables);
       }
+
+      // Randomize how many syllables are used in front/end, minimum 1 each
+      const frontCount = Math.floor(Math.random() * 3) + 1;
+      const endCount = 6 - frontCount;
+
+      // Rearrange if swapped
+      const swap = Math.random() < 0.2; // 20% chance to swap
+      const front = swap ? values.slice(3, 3 + endCount) : values.slice(0, frontCount);
+      const end = swap ? values.slice(0, frontCount) : values.slice(3, 3 + endCount);
+
+      const frontName = front.join("");
+      const endName = end.join("");
+
+      // Class and descriptor (slots 6 & 7)
+      if (!lockState[6]) values[6] = pickRandom(classes);
+      if (!lockState[7]) values[7] = pickRandom(descriptors);
+
+      updateDisplay(frontName, endName);
+    }
+
+    function updateDisplay(frontName = "", endName = "") {
+      const slotDiv = document.getElementById("slots");
+      slotDiv.innerHTML = "";
+
+      for (let i = 0; i < 6; i++) {
+        const slot = document.createElement("div");
+        slot.className = `slot ${lockState[i] ? "locked" : ""}`;
+        slot.innerText = `${i + 1}. ${values[i] || "---"}`;
+        slot.onclick = () => toggleLock(i);
+        slotDiv.appendChild(slot);
+      }
+
+      // Class (slot 6)
+      const classSlot = document.createElement("div");
+      classSlot.className = `slot ${lockState[6] ? "locked" : ""}`;
+      classSlot.innerText = `7. ${values[6] || "---"}`;
+      classSlot.onclick = () => toggleLock(6);
+      slotDiv.appendChild(classSlot);
+
+      // Descriptor (slot 7)
+      const descSlot = document.createElement("div");
+      descSlot.className = `slot ${lockState[7] ? "locked" : ""}`;
+      descSlot.innerText = `8. ${values[7] || "---"}`;
+      descSlot.onclick = () => toggleLock(7);
+      slotDiv.appendChild(descSlot);
+
+      document.getElementById("fullName").innerText =
+        frontName && endName ? `Name: ${frontName} ${endName}` : "";
+
+      document.getElementById("classTitle").innerText =
+        values[6] && values[7] ? `Class: ${values[6]} ${values[7]}` : "";
     }
 
     // Initial roll
-    words = Array(6).fill("---");
-    rollAll();
+    roll();
   </script>
-
 </body>
 </html>
