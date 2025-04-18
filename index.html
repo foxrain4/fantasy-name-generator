@@ -1,165 +1,157 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Fantasy Name Generator</title>
   <style>
     body {
       font-family: 'Georgia', serif;
-      background: #1e1e2f;
-      color: #eee;
+      background-color: #1b1b1b;
+      color: #f4f4f4;
       text-align: center;
-      padding: 20px;
-    }
-    h1 {
-      font-size: 2em;
-      color: #f7c74c;
-    }
-    .name-display {
-      font-size: 1.8em;
-      margin: 20px 0;
+      padding: 2rem;
     }
     .slot-container {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 10px;
-      margin: 20px 0;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
     }
     .slot {
-      background: #2c2c40;
+      background-color: #2d2d2d;
       border: 2px solid #444;
-      padding: 10px;
-      border-radius: 10px;
-      cursor: pointer;
-      width: 80px;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      position: relative;
     }
-    .locked {
-      background: #3a603f;
-      border-color: #6de086;
+    .slot input[type="checkbox"] {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      transform: scale(1.5);
     }
     button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 1em;
-      background: #f7c74c;
+      background-color: #4b2e83;
+      color: white;
       border: none;
-      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border-radius: 6px;
       cursor: pointer;
-      color: #000;
+      margin: 1rem;
     }
-    .avatar {
-      margin-top: 30px;
+    #nameDisplay {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 1rem 0;
+      color: #e2b714;
     }
-    .avatar img {
+    #classDisplay {
+      font-size: 1.2rem;
+      color: #9ae19d;
+    }
+    #avatar {
+      width: 150px;
+      height: 150px;
+      margin: 1rem auto;
       border-radius: 50%;
-      border: 3px solid #f7c74c;
-      width: 128px;
-      height: 128px;
+      border: 2px solid #ccc;
+      display: block;
     }
   </style>
 </head>
 <body>
+
   <h1>Fantasy Name Generator</h1>
-  <div class="name-display" id="nameDisplay">???</div>
-  <div class="slot-container" id="slots"></div>
-  <div class="slot-container" id="classContainer"></div>
-  <div class="slot-container" id="locationContainer"></div>
-  <button onclick="roll()">🎲 Roll All</button>
-  <div class="avatar" id="avatarContainer"></div>
+
+  <div class="slot-container" id="slots">
+    <!-- Slots will be dynamically added -->
+  </div>
+
+  <div>
+    <button onclick="generateName()">Roll All</button>
+  </div>
+
+  <div id="nameDisplay"></div>
+  <img id="avatar" src="" alt="Avatar">
+  <div id="classDisplay"></div>
 
   <script>
     const syllables = [
       "dra", "vel", "zor", "morn", "kai", "lyr", "grim", "thal", "sha", "nur",
       "vak", "glen", "mir", "ael", "vor", "nis", "ser", "zel", "rin", "ark",
-      "tor", "bal", "eth", "zan", "kre", "uld", "yor", "xan", "om", "fen"
+      "tor", "gorn", "quor", "zeth", "brak", "cryn", "dren", "elth", "fae",
+      "goth", "hal", "ith", "jor", "kul", "lek", "mor", "nel", "osk", "pyre",
+      "ryk", "sol", "tyr", "ul", "vek", "wyr", "xan", "yor", "zan"
     ];
 
     const classes = [
-      "Knight", "Warlock", "Assassin", "Necromancer", "Witch",
-      "Scholar", "Thief", "Bard", "Priestess", "Waitress",
-      "Hunter", "Druid", "Warden", "Seer", "Wizard"
+      "Knight", "Warlock", "Assassin", "Necromancer", "Witch", "Scholar",
+      "Thief", "Bard", "Priestess", "Waitress", "Hunter", "Druid", "Warden",
+      "Wizard of Donar", "Cleric of Ashvale", "Sentinel of the Mire", "Oracle of Vex",
+      "Shadowblade of Karth", "Wanderer of the Wastes"
     ];
 
-    const locations = [
-      "of Donar", "of the Hollow", "from Eldralore", "of the Vale",
-      "of Ashenfall", "from the North", "of Dreadmoor", "of Emberkeep"
-    ];
+    const slots = [];
 
-    const slots = Array(6).fill(null).map((_, i) => ({ locked: false, value: "" }));
-    let selectedClass = { locked: false, value: "" };
-    let selectedLocation = { locked: false, value: "" };
-
-    function randomizeWord(baseList) {
-      let word = baseList[Math.floor(Math.random() * baseList.length)];
-      if (Math.random() < 0.1 && word.length > 2) {
-        const removeIndex = Math.floor(Math.random() * word.length);
-        word = word.slice(0, removeIndex) + word.slice(removeIndex + 1);
-      }
-      if (Math.random() < 0.1) {
-        const insertIndex = Math.floor(Math.random() * (word.length + 1));
-        const insertChar = String.fromCharCode(97 + Math.floor(Math.random() * 26));
-        word = word.slice(0, insertIndex) + insertChar + word.slice(insertIndex);
+    function mutateWord(word) {
+      const rand = Math.random();
+      if (rand < 0.1 && word.length > 2) {
+        // Remove one letter
+        const i = Math.floor(Math.random() * word.length);
+        return word.slice(0, i) + word.slice(i + 1);
+      } else if (rand < 0.2) {
+        // Add one letter
+        const i = Math.floor(Math.random() * (word.length + 1));
+        const letter = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+        return word.slice(0, i) + letter + word.slice(i);
       }
       return word;
     }
 
-    function render() {
-      const slotContainer = document.getElementById("slots");
-      slotContainer.innerHTML = "";
+    function generateName() {
+      for (let i = 0; i < 6; i++) {
+        const checkbox = document.getElementById(`lock${i}`);
+        if (!checkbox.checked) {
+          const random = syllables[Math.floor(Math.random() * syllables.length)];
+          document.getElementById(`slot${i}`).textContent = mutateWord(random);
+        }
+      }
 
-      slots.forEach((slot, i) => {
+      // Assemble name from slots 0-2 and 3-5
+      const front = [0,1,2].map(i => document.getElementById(`slot${i}`).textContent).join('');
+      const end = [3,4,5].map(i => document.getElementById(`slot${i}`).textContent).join('');
+      const displayName = `${front} ${end}`;
+      document.getElementById("nameDisplay").textContent = displayName;
+
+      // Class & Location
+      const classSlot = document.getElementById("lock6");
+      if (!classSlot.checked) {
+        const randClass = classes[Math.floor(Math.random() * classes.length)];
+        document.getElementById("slot6").textContent = randClass;
+      }
+
+      const fullClass = document.getElementById("slot6").textContent;
+      document.getElementById("classDisplay").textContent = fullClass;
+
+      // Avatar (new API format)
+      const seed = displayName.replace(/\s/g, '');
+      document.getElementById("avatar").src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
+    }
+
+    function createSlots() {
+      const container = document.getElementById("slots");
+      for (let i = 0; i < 7; i++) {
         const div = document.createElement("div");
-        div.className = "slot" + (slot.locked ? " locked" : "");
-        div.textContent = slot.value || "???";
-        div.onclick = () => {
-          slot.locked = !slot.locked;
-          render();
-        };
-        slotContainer.appendChild(div);
-      });
-
-      const classDiv = document.getElementById("classContainer");
-      classDiv.innerHTML = "";
-      const classSlot = document.createElement("div");
-      classSlot.className = "slot" + (selectedClass.locked ? " locked" : "");
-      classSlot.textContent = selectedClass.value || "Class";
-      classSlot.onclick = () => {
-        selectedClass.locked = !selectedClass.locked;
-        render();
-      };
-      classDiv.appendChild(classSlot);
-
-      const locationDiv = document.getElementById("locationContainer");
-      locationDiv.innerHTML = "";
-      const locationSlot = document.createElement("div");
-      locationSlot.className = "slot" + (selectedLocation.locked ? " locked" : "");
-      locationSlot.textContent = selectedLocation.value || "Location";
-      locationSlot.onclick = () => {
-        selectedLocation.locked = !selectedLocation.locked;
-        render();
-      };
-      locationDiv.appendChild(locationSlot);
-
-      const name = slots.map(s => s.value).join(" ");
-      document.getElementById("nameDisplay").textContent = name;
-
-      const avatar = document.getElementById("avatarContainer");
-      const seed = encodeURIComponent(name);
-      avatar.innerHTML = `<img src="https://avatars.dicebear.com/api/adventurer/${seed}.svg" alt="avatar" />`;
+        div.className = "slot";
+        div.innerHTML = `<span id="slot${i}">---</span><input type="checkbox" id="lock${i}" title="Lock">`;
+        container.appendChild(div);
+      }
     }
 
-    function roll() {
-      slots.forEach(slot => {
-        if (!slot.locked) slot.value = randomizeWord(syllables);
-      });
-      if (!selectedClass.locked) selectedClass.value = classes[Math.floor(Math.random() * classes.length)];
-      if (!selectedLocation.locked) selectedLocation.value = locations[Math.floor(Math.random() * locations.length)];
-      render();
-    }
-
-    roll();
+    createSlots();
+    generateName();
   </script>
 </body>
 </html>
