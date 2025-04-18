@@ -5,11 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fantasy Name Generator</title>
   <style>
-    body { font-family: 'Georgia', serif; text-align: center; padding: 2rem; background: #111; color: #eee; }
-    .slot { display: inline-block; margin: 1rem; padding: 0.5rem 1rem; background: #222; border-radius: 8px; }
-    .locked { background: #4a0; }
-    button { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 1rem; }
-    .name-section { margin: 2rem 0; font-size: 1.5rem; }
+    body {
+      font-family: 'Georgia', serif;
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(to bottom right, #1c1c1c, #2d2d2d);
+      color: #f4f4f4;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: #ffcc00;
+      text-shadow: 2px 2px 4px #000;
+    }
+
+    .slot {
+      display: inline-block;
+      margin: 0.5rem;
+      padding: 0.75rem 1.2rem;
+      background: #333;
+      border: 2px solid #555;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .slot:hover {
+      background: #444;
+    }
+
+    .locked {
+      background: #004400;
+      border-color: #00cc44;
+      color: #ccffcc;
+    }
+
+    button {
+      margin-top: 1.5rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: #666;
+    }
+
+    .name-section {
+      margin: 2rem 0;
+      font-size: 1.4rem;
+      color: #fff;
+    }
+
+    #fullName {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #ffd700;
+    }
+
+    #classTitle {
+      font-style: italic;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
@@ -58,24 +121,43 @@
       return arr[Math.floor(Math.random() * arr.length)];
     }
 
-    function roll() {
-      for (let i = 0; i < 6; i++) {
-        if (!lockState[i]) values[i] = pickRandom(syllables);
+    function mutateWord(word) {
+      let modified = word;
+      const shouldRemove = Math.random() < 0.1;
+      const shouldAdd = Math.random() < 0.1;
+
+      if (shouldRemove && word.length > 1) {
+        const removeIndex = Math.floor(Math.random() * word.length);
+        modified = word.slice(0, removeIndex) + word.slice(removeIndex + 1);
       }
 
-      // Randomize how many syllables are used in front/end, minimum 1 each
+      if (shouldAdd) {
+        const addIndex = Math.floor(Math.random() * (modified.length + 1));
+        const randomChar = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+        modified = modified.slice(0, addIndex) + randomChar + modified.slice(addIndex);
+      }
+
+      return modified;
+    }
+
+    function roll() {
+      // Roll syllables
+      for (let i = 0; i < 6; i++) {
+        if (!lockState[i]) {
+          values[i] = mutateWord(pickRandom(syllables));
+        }
+      }
+
+      // Randomize syllable count per half
       const frontCount = Math.floor(Math.random() * 3) + 1;
       const endCount = 6 - frontCount;
 
-      // Rearrange if swapped
-      const swap = Math.random() < 0.2; // 20% chance to swap
-      const front = swap ? values.slice(3, 3 + endCount) : values.slice(0, frontCount);
-      const end = swap ? values.slice(0, frontCount) : values.slice(3, 3 + endCount);
+      const front = values.slice(0, frontCount);
+      const end = values.slice(3, 3 + endCount);
 
       const frontName = front.join("");
       const endName = end.join("");
 
-      // Class and descriptor (slots 6 & 7)
       if (!lockState[6]) values[6] = pickRandom(classes);
       if (!lockState[7]) values[7] = pickRandom(descriptors);
 
@@ -94,14 +176,12 @@
         slotDiv.appendChild(slot);
       }
 
-      // Class (slot 6)
       const classSlot = document.createElement("div");
       classSlot.className = `slot ${lockState[6] ? "locked" : ""}`;
       classSlot.innerText = `7. ${values[6] || "---"}`;
       classSlot.onclick = () => toggleLock(6);
       slotDiv.appendChild(classSlot);
 
-      // Descriptor (slot 7)
       const descSlot = document.createElement("div");
       descSlot.className = `slot ${lockState[7] ? "locked" : ""}`;
       descSlot.innerText = `8. ${values[7] || "---"}`;
@@ -115,7 +195,6 @@
         values[6] && values[7] ? `Class: ${values[6]} ${values[7]}` : "";
     }
 
-    // Initial roll
     roll();
   </script>
 </body>
