@@ -2,201 +2,161 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fantasy Name Generator</title>
   <style>
     body {
       font-family: 'Georgia', serif;
+      background: #1e1e2f;
+      color: #eee;
       text-align: center;
-      padding: 2rem;
-      background: linear-gradient(to bottom right, #1c1c1c, #2d2d2d);
-      color: #f4f4f4;
+      padding: 20px;
     }
-
     h1 {
-      font-size: 2.2rem;
-      color: #ffcc00;
-      text-shadow: 2px 2px 4px #000;
+      font-size: 2em;
+      color: #f7c74c;
     }
-
-    .slot-group {
-      margin-bottom: 1.5rem;
+    .name-display {
+      font-size: 1.8em;
+      margin: 20px 0;
     }
-
+    .slot-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+    }
     .slot {
-      display: inline-block;
-      margin: 0.5rem;
-      padding: 0.75rem 1.2rem;
-      background: #333;
-      border: 2px solid #555;
-      border-radius: 8px;
+      background: #2c2c40;
+      border: 2px solid #444;
+      padding: 10px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      width: 80px;
     }
-
-    .slot:hover {
-      background: #444;
-    }
-
     .locked {
-      background: #004400;
-      border-color: #00cc44;
-      color: #ccffcc;
+      background: #3a603f;
+      border-color: #6de086;
     }
-
     button {
-      margin-top: 1.5rem;
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      background: #444;
-      color: #fff;
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background: #f7c74c;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: background 0.2s ease;
+      color: #000;
     }
-
-    button:hover {
-      background: #666;
+    .avatar {
+      margin-top: 30px;
     }
-
-    .name-section {
-      margin: 2rem 0;
-      font-size: 1.4rem;
-      color: #fff;
-    }
-
-    #fullName {
-      font-size: 1.8rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      color: #ffd700;
-    }
-
-    #classTitle {
-      font-style: italic;
-      color: #aaa;
+    .avatar img {
+      border-radius: 50%;
+      border: 3px solid #f7c74c;
+      width: 128px;
+      height: 128px;
     }
   </style>
 </head>
 <body>
-
   <h1>Fantasy Name Generator</h1>
-
-  <div class="slot-group" id="slots-name"></div>
-  <button onclick="roll()">Roll All</button>
-
-  <div class="slot-group" id="slots-class"></div>
-
-  <div class="name-section">
-    <div id="fullName"></div>
-    <div id="classTitle"></div>
-  </div>
+  <div class="name-display" id="nameDisplay">???</div>
+  <div class="slot-container" id="slots"></div>
+  <div class="slot-container" id="classContainer"></div>
+  <div class="slot-container" id="locationContainer"></div>
+  <button onclick="roll()">🎲 Roll All</button>
+  <div class="avatar" id="avatarContainer"></div>
 
   <script>
     const syllables = [
       "dra", "vel", "zor", "morn", "kai", "lyr", "grim", "thal", "sha", "nur",
       "vak", "glen", "mir", "ael", "vor", "nis", "ser", "zel", "rin", "ark",
-      "nyx", "vyr", "zan", "kor", "lux", "syra", "dael", "orim", "rax", "ish",
-      "thex", "ezra", "ulth", "xan", "bram", "tarn", "elv", "keth", "zhul"
+      "tor", "bal", "eth", "zan", "kre", "uld", "yor", "xan", "om", "fen"
     ];
 
     const classes = [
-      "Knight", "Warlock", "Assassin", "Necromancer", "Witch", "Scholar",
-      "Thief", "Bard", "Priestess", "Waitress", "Hunter", "Druid", "Warden",
-      "Shadowblade", "Firecaller", "Stormseer", "Ranger", "Mystic"
+      "Knight", "Warlock", "Assassin", "Necromancer", "Witch",
+      "Scholar", "Thief", "Bard", "Priestess", "Waitress",
+      "Hunter", "Druid", "Warden", "Seer", "Wizard"
     ];
 
-    const descriptors = [
-      "of Donar", "of the Flame", "of Shadows", "of the North", "from Elaria",
-      "of the Depths", "of Twilight", "from Virel", "of the Wastes", "of the Sky",
-      "from Kurn", "of Stonehelm", "of the Crimson Vale"
+    const locations = [
+      "of Donar", "of the Hollow", "from Eldralore", "of the Vale",
+      "of Ashenfall", "from the North", "of Dreadmoor", "of Emberkeep"
     ];
 
-    const lockState = Array(8).fill(false);
-    const values = Array(8).fill("");
+    const slots = Array(6).fill(null).map((_, i) => ({ locked: false, value: "" }));
+    let selectedClass = { locked: false, value: "" };
+    let selectedLocation = { locked: false, value: "" };
 
-    function toggleLock(index) {
-      lockState[index] = !lockState[index];
-      updateDisplay();
-    }
-
-    function pickRandom(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
-    }
-
-    function mutateWord(word) {
-      let modified = word;
-      const shouldRemove = Math.random() < 0.1;
-      const shouldAdd = Math.random() < 0.1;
-
-      if (shouldRemove && word.length > 1) {
+    function randomizeWord(baseList) {
+      let word = baseList[Math.floor(Math.random() * baseList.length)];
+      if (Math.random() < 0.1 && word.length > 2) {
         const removeIndex = Math.floor(Math.random() * word.length);
-        modified = word.slice(0, removeIndex) + word.slice(removeIndex + 1);
+        word = word.slice(0, removeIndex) + word.slice(removeIndex + 1);
       }
-
-      if (shouldAdd) {
-        const addIndex = Math.floor(Math.random() * (modified.length + 1));
-        const randomChar = String.fromCharCode(97 + Math.floor(Math.random() * 26));
-        modified = modified.slice(0, addIndex) + randomChar + modified.slice(addIndex);
+      if (Math.random() < 0.1) {
+        const insertIndex = Math.floor(Math.random() * (word.length + 1));
+        const insertChar = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+        word = word.slice(0, insertIndex) + insertChar + word.slice(insertIndex);
       }
+      return word;
+    }
 
-      return modified;
+    function render() {
+      const slotContainer = document.getElementById("slots");
+      slotContainer.innerHTML = "";
+
+      slots.forEach((slot, i) => {
+        const div = document.createElement("div");
+        div.className = "slot" + (slot.locked ? " locked" : "");
+        div.textContent = slot.value || "???";
+        div.onclick = () => {
+          slot.locked = !slot.locked;
+          render();
+        };
+        slotContainer.appendChild(div);
+      });
+
+      const classDiv = document.getElementById("classContainer");
+      classDiv.innerHTML = "";
+      const classSlot = document.createElement("div");
+      classSlot.className = "slot" + (selectedClass.locked ? " locked" : "");
+      classSlot.textContent = selectedClass.value || "Class";
+      classSlot.onclick = () => {
+        selectedClass.locked = !selectedClass.locked;
+        render();
+      };
+      classDiv.appendChild(classSlot);
+
+      const locationDiv = document.getElementById("locationContainer");
+      locationDiv.innerHTML = "";
+      const locationSlot = document.createElement("div");
+      locationSlot.className = "slot" + (selectedLocation.locked ? " locked" : "");
+      locationSlot.textContent = selectedLocation.value || "Location";
+      locationSlot.onclick = () => {
+        selectedLocation.locked = !selectedLocation.locked;
+        render();
+      };
+      locationDiv.appendChild(locationSlot);
+
+      const name = slots.map(s => s.value).join(" ");
+      document.getElementById("nameDisplay").textContent = name;
+
+      const avatar = document.getElementById("avatarContainer");
+      const seed = encodeURIComponent(name);
+      avatar.innerHTML = `<img src="https://avatars.dicebear.com/api/adventurer/${seed}.svg" alt="avatar" />`;
     }
 
     function roll() {
-      for (let i = 0; i < 6; i++) {
-        if (!lockState[i]) {
-          values[i] = mutateWord(pickRandom(syllables));
-        }
-      }
-
-      const frontCount = Math.floor(Math.random() * 3) + 1;
-      const endCount = 6 - frontCount;
-
-      const front = values.slice(0, frontCount);
-      const end = values.slice(3, 3 + endCount);
-
-      const frontName = front.join("");
-      const endName = end.join("");
-
-      if (!lockState[6]) values[6] = pickRandom(classes);
-      if (!lockState[7]) values[7] = pickRandom(descriptors);
-
-      updateDisplay(frontName, endName);
-    }
-
-    function updateDisplay(frontName = "", endName = "") {
-      const nameDiv = document.getElementById("slots-name");
-      const classDiv = document.getElementById("slots-class");
-      nameDiv.innerHTML = "";
-      classDiv.innerHTML = "";
-
-      for (let i = 0; i < 6; i++) {
-        const slot = document.createElement("div");
-        slot.className = `slot ${lockState[i] ? "locked" : ""}`;
-        slot.innerText = `${i + 1}. ${values[i] || "---"}`;
-        slot.onclick = () => toggleLock(i);
-        nameDiv.appendChild(slot);
-      }
-
-      const classSlot = document.createElement("div");
-      classSlot.className = `slot ${lockState[6] ? "locked" : ""}`;
-      classSlot.innerText = `7. ${values[6] || "---"}`;
-      classSlot.onclick = () => toggleLock(6);
-      classDiv.appendChild(classSlot);
-
-      const descSlot = document.createElement("div");
-      descSlot.className = `slot ${lockState[7] ? "locked" : ""}`;
-      descSlot.innerText = `8. ${values[7] || "---"}`;
-      descSlot.onclick = () => toggleLock(7);
-      classDiv.appendChild(descSlot);
-
-      document.getElementById("fullName").innerText =
-        frontName && endName ? `Name: ${frontName} ${endName}` : "";
-
-      document.getElementById("classTitle").innerText =
-        values[6] && values[7] ? `Class: ${values[6]} ${values[7]}` : "";
+      slots.forEach(slot => {
+        if (!slot.locked) slot.value = randomizeWord(syllables);
+      });
+      if (!selectedClass.locked) selectedClass.value = classes[Math.floor(Math.random() * classes.length)];
+      if (!selectedLocation.locked) selectedLocation.value = locations[Math.floor(Math.random() * locations.length)];
+      render();
     }
 
     roll();
